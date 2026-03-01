@@ -21,7 +21,7 @@ Built using React, Tailwind CSS, Node.js, and Express with clean modular archite
 
 ## 🖼 Screenshots
 
-### 📌 Dashboard (Incomplete vs Completed)
+### 📌 Dashboard
 
 <p align="center">
   <img src="./screenshots/dashboard-complete.png">
