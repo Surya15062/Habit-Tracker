@@ -168,7 +168,7 @@ Aspiring Java Developer
 
 ---
 
-> *"Consistency beats motivation. Small daily improvements lead to big success."*
+> "Consistency beats motivation. Small daily improvements lead to big success."
 
 ---
 
