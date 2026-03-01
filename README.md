@@ -24,7 +24,7 @@ Built using React, Tailwind CSS, Node.js, and Express with clean modular archite
 ### 📌 Dashboard (Incomplete vs Completed)
 
 <p align="center">
-  <img src="./screenshots/dashboard-complete.png" width="850">
+  <img src="./screenshots/dashboard-complete.png">
 </p>
 
 ---
@@ -32,7 +32,7 @@ Built using React, Tailwind CSS, Node.js, and Express with clean modular archite
 ### 📊 Statistics Page
 
 <p align="center">
-  <img src="./screenshots/statistics.png" width="850">
+  <img src="./screenshots/statistics.png">
 </p>
 
 ---
@@ -51,30 +51,31 @@ This project follows clear separation of concerns between frontend and backend f
 
 ## 📂 Project Structure
 
+```
 Habit-Tracker/
 │
 ├── backend/
-│ ├── middleware/ # Custom middleware logic
-│ ├── routes/ # API routes (auth, habits, progress, stats)
-│ ├── db.js # Database configuration
-│ ├── server.js # Express server entry point
-│ └── package.json # Backend dependencies
+│   ├── middleware/        # Custom middleware logic
+│   ├── routes/            # API routes (auth, habits, progress, stats)
+│   ├── db.js              # Database configuration
+│   ├── server.js          # Express server entry point
+│   └── package.json       # Backend dependencies
 │
 ├── frontend/
-│ ├── public/ # Static assets
-│ ├── src/
-│ │ ├── components/ # Reusable UI components
-│ │ ├── pages/ # Dashboard, Statistics pages
-│ │ ├── context/ # Global state management
-│ │ └── main.jsx # React entry file
-│ ├── index.html
-│ └── package.json # Frontend dependencies
+│   ├── public/            # Static assets
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   ├── pages/         # Dashboard, Statistics pages
+│   │   ├── context/       # Global state management
+│   │   └── main.jsx       # React entry file
+│   ├── index.html
+│   ├── package.json       # Frontend dependencies
+│   └── vite.config.js
 │
-├── screenshots/
+├── screenshots/           # Project screenshots for README
 ├── .gitignore
 └── README.md
-
-
+```
 ---
 
 ## 🛠 Tech Stack
