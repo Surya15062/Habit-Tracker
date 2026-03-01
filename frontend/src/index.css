@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #b2f042;
+  --color-secondary: #b286fd;
+  --color-background-dark: #101010;
+  --color-card-dark: #1c1c1c;
+  --font-sans: 'Poppins', sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-background-dark text-white font-sans antialiased;
+  }
+}
+
+/* Transitions for cards */
+.card-hover {
+  @apply transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/20;
+}
