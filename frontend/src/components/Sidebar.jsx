@@ -5,7 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import { LayoutDashboard, BarChart3, LogOut, CheckCircle2, X } from 'lucide-react';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
-    const { user, logout } = useContext(AuthContext);
+    const { logout } = useContext(AuthContext);
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -15,9 +15,9 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     };
 
     const linkClasses = ({ isActive }) =>
-        `flex items-center space-x-3 w-full p-3 rounded-xl transition-all duration-200 ${
+        `flex items-center space-x-3 w-full p-3 rounded-xl transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] ${
             isActive
-                ? 'text-black bg-primary font-semibold shadow-lg shadow-primary/20'
+                ? 'text-black bg-primary font-bold shadow-lg shadow-primary/15 scale-[1.02]'
                 : 'text-gray-400 hover:text-white hover:bg-white/5'
         }`;
 
@@ -48,23 +48,12 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                     {/* Mobile Close Button */}
                     <button
                         onClick={() => setIsOpen(false)}
-                        className="p-1 text-gray-400 hover:text-white md:hidden focus:outline-none"
+                        className="p-1 text-gray-400 hover:text-white md:hidden focus:outline-none transition-colors"
                         aria-label="Close menu"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
-
-                {/* User Info Profile Box */}
-                {user && (
-                    <div className="p-4 bg-white/5 border border-white/10 rounded-2xl mb-8 flex flex-col gap-1">
-                        <span className="text-[11px] uppercase tracking-wider text-gray-500 font-semibold">Logged In As</span>
-                        <span className="text-sm font-bold text-primary truncate">{user.name}</span>
-                        {user.age && (
-                            <span className="text-xs text-gray-400">Age: {user.age}</span>
-                        )}
-                    </div>
-                )}
 
                 {/* Navigation Links */}
                 <nav className="flex-1 space-y-2">
@@ -92,7 +81,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 <button
                     id="logout-btn"
                     onClick={handleLogout}
-                    className="flex items-center space-x-3 w-full p-3 rounded-xl transition-all duration-200 text-red-400 hover:bg-red-500/10 hover:text-red-300 mt-auto border border-transparent focus:outline-none cursor-pointer"
+                    className="flex items-center space-x-3 w-full p-3 rounded-xl transition-all duration-200 text-red-400 hover:bg-red-500/10 hover:text-red-300 mt-auto border border-transparent focus:outline-none cursor-pointer transform active:scale-[0.98]"
                 >
                     <LogOut className="w-5 h-5" />
                     <span>Logout</span>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import HabitCard from '../components/HabitCard';
-import { Plus, CheckSquare, Sparkles } from 'lucide-react';
+import { Plus, CheckSquare, Sparkles, ClipboardList } from 'lucide-react';
 
 // ── localStorage helpers ──────────────────────────────────────────────────────
 const HABITS_KEY = 'habit_habits';
@@ -29,6 +29,19 @@ function getTodayStr() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
+
+const EMOJI_PRESETS = [
+    { char: '📚', label: 'Reading' },
+    { char: '💧', label: 'Water' },
+    { char: '🏃', label: 'Running' },
+    { char: '🧘', label: 'Meditation' },
+    { char: '💪', label: 'Workout' },
+    { char: '😴', label: 'Sleep' },
+    { char: '🍎', label: 'Healthy Food' },
+    { char: '🎯', label: 'Goals' },
+    { char: '💻', label: 'Coding' },
+    { char: '🎨', label: 'Design' }
+];
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -41,6 +54,7 @@ export default function Dashboard() {
     const [showAdd, setShowAdd] = useState(false);
     const [newTitle, setNewTitle] = useState('');
     const [newFrequency, setNewFrequency] = useState('daily');
+    const [selectedEmoji, setSelectedEmoji] = useState('🎯');
 
     // Sync to localStorage
     useEffect(() => { saveHabits(habits); }, [habits]);
@@ -71,12 +85,14 @@ export default function Dashboard() {
         const newHabit = {
             id: Date.now(),
             title: newTitle.trim(),
+            emoji: selectedEmoji,
             frequency: newFrequency.charAt(0).toUpperCase() + newFrequency.slice(1),
             created_at: new Date().toISOString(),
         };
         setHabits(prev => [...prev, newHabit]);
         setNewTitle('');
         setNewFrequency('daily');
+        setSelectedEmoji('🎯');
         setShowAdd(false);
     };
 
@@ -96,11 +112,11 @@ export default function Dashboard() {
         : 0;
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 animate-fade-in-up">
             {/* Top Banner Row: Greeting + Progress Ring */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
                 {/* Greeting Card */}
-                <div className="lg:col-span-2 bg-gradient-to-br from-card-dark to-card-dark/60 border border-white/5 p-6 rounded-2xl flex flex-col justify-between relative overflow-hidden shadow-lg">
+                <div className="lg:col-span-2 bg-gradient-to-br from-card-dark to-card-dark/60 border border-white/5 p-6 rounded-2xl flex flex-col justify-between relative overflow-hidden shadow-lg hover:border-white/10 transition-colors duration-300">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                         <Sparkles className="w-24 h-24 text-primary" />
                     </div>
@@ -118,7 +134,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Progress Card */}
-                <div className="bg-card-dark border border-white/5 p-6 rounded-2xl flex items-center justify-between shadow-lg relative overflow-hidden">
+                <div className="bg-card-dark border border-white/5 p-6 rounded-2xl flex items-center justify-between shadow-lg relative overflow-hidden hover:border-white/10 transition-colors duration-300">
                     <div className="space-y-2">
                         <p className="text-xs uppercase tracking-wider text-gray-500 font-bold">Today&apos;s Progress</p>
                         <div className="flex items-baseline space-x-1.5">
@@ -177,7 +193,7 @@ export default function Dashboard() {
                         <button
                             id="add-habit-btn"
                             onClick={() => setShowAdd(!showAdd)}
-                            className="flex items-center space-x-2 bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-black px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-300 shadow-sm cursor-pointer"
+                            className="flex items-center space-x-2 bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-black px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 shadow-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98] glow-primary-hover"
                         >
                             <Plus className="w-4 h-4" />
                             <span>Add Habit</span>
@@ -188,29 +204,56 @@ export default function Dashboard() {
                     {showAdd && (
                         <form 
                             onSubmit={addHabit} 
-                            className="bg-card-dark p-6 rounded-2xl border border-white/10 flex flex-col md:flex-row gap-4 items-stretch shadow-inner"
+                            className="bg-card-dark p-6 rounded-2xl border border-white/10 flex flex-col gap-5 shadow-inner"
                         >
-                            <input
-                                type="text"
-                                placeholder="E.g., Read 20 pages"
-                                value={newTitle}
-                                onChange={e => setNewTitle(e.target.value)}
-                                required
-                                autoFocus
-                                className="flex-1 bg-black/50 border border-white/10 rounded-xl p-3 outline-none focus:border-primary text-sm text-white placeholder-gray-500 transition-colors"
-                            />
-                            <select
-                                value={newFrequency}
-                                onChange={e => setNewFrequency(e.target.value)}
-                                className="bg-black/50 border border-white/10 rounded-xl p-3 outline-none focus:border-primary text-sm text-white px-4 transition-colors cursor-pointer"
-                            >
-                                <option value="daily">Daily</option>
-                                <option value="weekly">Weekly</option>
-                                <option value="custom">Custom</option>
-                            </select>
+                            <div className="flex flex-col md:flex-row gap-4 items-stretch">
+                                <input
+                                    type="text"
+                                    placeholder="E.g., Read 20 pages"
+                                    value={newTitle}
+                                    onChange={e => setNewTitle(e.target.value)}
+                                    required
+                                    autoFocus
+                                    className="flex-1 bg-black/50 border border-white/10 rounded-xl p-3 outline-none focus:border-primary text-sm text-white placeholder-gray-500 transition-colors"
+                                />
+                                <select
+                                    value={newFrequency}
+                                    onChange={e => setNewFrequency(e.target.value)}
+                                    className="bg-black/50 border border-white/10 rounded-xl p-3 outline-none focus:border-primary text-sm text-white px-4 transition-colors cursor-pointer"
+                                >
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="custom">Custom</option>
+                                </select>
+                            </div>
+
+                            {/* iOS Style Emoji Presets Selector */}
+                            <div className="space-y-2">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">
+                                    Choose Habit Icon
+                                </label>
+                                <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 bg-black/30 p-2 rounded-xl border border-white/5">
+                                    {EMOJI_PRESETS.map((preset) => (
+                                        <button
+                                            key={preset.char}
+                                            type="button"
+                                            onClick={() => setSelectedEmoji(preset.char)}
+                                            className={`p-2.5 rounded-lg text-xl text-center transition-all duration-200 hover:bg-white/10 active:scale-90 cursor-pointer ${
+                                                selectedEmoji === preset.char 
+                                                    ? 'bg-primary/20 border border-primary/40 scale-110 shadow-sm' 
+                                                    : 'border border-transparent opacity-60 hover:opacity-100'
+                                            }`}
+                                            title={preset.label}
+                                        >
+                                            {preset.char}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
                             <button 
                                 type="submit" 
-                                className="bg-primary text-black font-bold px-6 py-3 rounded-xl hover:bg-primary/90 transition-colors text-sm cursor-pointer shadow-md shadow-primary/15"
+                                className="bg-primary text-black font-extrabold py-3.5 rounded-xl hover:bg-primary/95 transition-all duration-300 text-sm cursor-pointer shadow-md shadow-primary/10 hover:shadow-lg hover:shadow-primary/20 transform hover:scale-[1.01] active:scale-[0.99] glow-primary-hover"
                             >
                                 Save Habit
                             </button>
@@ -219,17 +262,23 @@ export default function Dashboard() {
 
                     {/* Habits Cards Grid */}
                     {habits.length === 0 ? (
-                        <div className="bg-card-dark rounded-2xl p-16 text-center border border-white/5 border-dashed flex flex-col items-center justify-center space-y-4">
-                            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-gray-400">
-                                <Plus className="w-6 h-6" />
+                        <div className="bg-card-dark rounded-3xl p-16 text-center border border-white/5 border-dashed flex flex-col items-center justify-center space-y-6 animate-fade-in-up">
+                            {/* Graphic Clipboard Empty State */}
+                            <div className="relative w-24 h-24 flex items-center justify-center bg-white/5 rounded-full border border-white/10 shadow-inner">
+                                <ClipboardList className="w-10 h-10 text-gray-400" />
+                                <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 shadow-md">
+                                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                                </div>
                             </div>
-                            <div className="space-y-1">
-                                <p className="text-gray-300 font-semibold">No habits tracked yet</p>
-                                <p className="text-xs text-gray-500">Create your first habit to begin building routines.</p>
+                            <div className="space-y-2 max-w-sm">
+                                <h3 className="text-xl font-bold text-white tracking-tight">Your habit journal is empty</h3>
+                                <p className="text-xs text-gray-400 leading-relaxed">
+                                    Track, visualize, and improve your daily routines. Create your first habit using the preset icons to build your streaks.
+                                </p>
                             </div>
                             <button 
                                 onClick={() => setShowAdd(true)} 
-                                className="bg-primary text-black font-bold px-5 py-2.5 rounded-xl inline-flex items-center space-x-2 text-sm hover:bg-primary/90 transition-colors cursor-pointer shadow-md shadow-primary/15"
+                                className="bg-primary text-black font-bold px-6 py-3 rounded-xl inline-flex items-center space-x-2 text-sm hover:bg-primary/90 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-md shadow-primary/15 hover:shadow-lg hover:shadow-primary/25 glow-primary-hover"
                             >
                                 <Plus className="w-4 h-4" /> 
                                 <span>Create first habit</span>
@@ -237,14 +286,18 @@ export default function Dashboard() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            {habits.map(habit => (
-                                <HabitCard
-                                    key={habit.id}
-                                    habit={habit}
-                                    isCompletedForToday={todayProgress[habit.id]}
-                                    onToggleProgress={toggleProgress}
-                                    onDelete={deleteHabit}
-                                />
+                            {habits.map((habit, index) => (
+                                <div 
+                                    key={habit.id} 
+                                    className={`animate-fade-in-up delay-${(index % 5) * 50}`}
+                                >
+                                    <HabitCard
+                                        habit={habit}
+                                        isCompletedForToday={todayProgress[habit.id]}
+                                        onToggleProgress={toggleProgress}
+                                        onDelete={deleteHabit}
+                                    />
+                                </div>
                             ))}
                         </div>
                     )}
@@ -262,10 +315,10 @@ export default function Dashboard() {
                             <p className="text-gray-500 text-xs text-center italic py-6">No active habits for today.</p>
                         ) : (
                             <div className="space-y-3">
-                                {habits.map(habit => (
+                                {habits.map((habit, index) => (
                                     <label 
                                         key={habit.id} 
-                                        className="flex items-center space-x-4 cursor-pointer group p-3 hover:bg-white/30 rounded-xl transition-all duration-200"
+                                        className={`flex items-center space-x-4 cursor-pointer group p-3 hover:bg-white/5 rounded-xl transition-all duration-200 animate-fade-in-up delay-${(index % 5) * 50}`}
                                     >
                                         <input
                                             type="checkbox"
@@ -273,13 +326,16 @@ export default function Dashboard() {
                                             onChange={(e) => toggleProgress(habit.id, e.target.checked)}
                                             className="hidden"
                                         />
-                                        <div className={`w-5.5 h-5.5 rounded-lg border flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+                                        <div className={`w-5.5 h-5.5 rounded-lg border flex items-center justify-center flex-shrink-0 transition-all duration-200 checkbox-transition ${
                                             todayProgress[habit.id] 
-                                                ? 'bg-secondary border-secondary shadow-md shadow-secondary/15 scale-105' 
+                                                ? 'bg-secondary border-secondary shadow-md shadow-secondary/15 scale-105 animate-check-pop' 
                                                 : 'bg-black/40 border-white/20 group-hover:border-secondary/60'
                                         }`}>
                                             {todayProgress[habit.id] && <CheckSquare className="w-3.5 h-3.5 text-white" />}
                                         </div>
+                                        <span className="text-base mr-1.5 flex-shrink-0">
+                                            {habit.emoji || '🎯'}
+                                        </span>
                                         <span className={`text-sm font-semibold transition-all duration-200 truncate ${
                                             todayProgress[habit.id] 
                                                 ? 'text-gray-500 line-through' 

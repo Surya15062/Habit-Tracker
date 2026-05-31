@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
-import { Calendar, Target, Award, Flame } from 'lucide-react';
+import { Calendar, Target, Award, Flame, TrendingUp } from 'lucide-react';
 
 // ── localStorage helpers ──────────────────────────────────────────────────────
 function loadHabits() {
@@ -109,8 +109,27 @@ export default function Stats() {
 
     const streak = useMemo(() => calcStreak(habits, progress), [habits, progress]);
 
+    // Individual habit success rate for the current selected year
+    const habitStats = useMemo(() => {
+        return habits.map(h => {
+            let completed = 0;
+            let total = 0;
+            // Scan through all 12 months for this year
+            for (let m = 1; m <= 12; m++) {
+                const daysInMonth = new Date(year, m, 0).getDate();
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${year}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    total++;
+                    if (progress[h.id] && progress[h.id][dateStr]) completed++;
+                }
+            }
+            const percentage = total ? Math.round((completed / total) * 100) : 0;
+            return { ...h, percentage, completed, total };
+        });
+    }, [year, habits, progress]);
+
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 animate-fade-in-up">
             {/* Header section with Year/Month Selector */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/5">
                 <div>
@@ -140,7 +159,7 @@ export default function Stats() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 
                 {/* Monthly Success */}
-                <div className="bg-gradient-to-br from-card-dark to-card-dark/60 p-6 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+                <div className="bg-gradient-to-br from-card-dark to-card-dark/60 p-6 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden flex flex-col justify-between min-h-[140px] hover:border-white/10 transition-colors duration-300">
                     <div className="absolute -right-6 -top-6 w-20 h-20 bg-primary/10 rounded-full blur-xl" />
                     <div className="flex items-center space-x-3 text-gray-400 mb-4">
                         <div className="p-2.5 bg-primary/15 text-primary rounded-xl"><Calendar className="w-5 h-5" /></div>
@@ -153,7 +172,7 @@ export default function Stats() {
                 </div>
 
                 {/* Yearly Success */}
-                <div className="bg-gradient-to-br from-card-dark to-card-dark/60 p-6 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+                <div className="bg-gradient-to-br from-card-dark to-card-dark/60 p-6 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden flex flex-col justify-between min-h-[140px] hover:border-white/10 transition-colors duration-300">
                     <div className="absolute -right-6 -top-6 w-20 h-20 bg-secondary/10 rounded-full blur-xl" />
                     <div className="flex items-center space-x-3 text-gray-400 mb-4">
                         <div className="p-2.5 bg-secondary/15 text-secondary rounded-xl"><Target className="w-5 h-5" /></div>
@@ -166,7 +185,7 @@ export default function Stats() {
                 </div>
 
                 {/* Current Streak */}
-                <div className="bg-gradient-to-br from-card-dark to-card-dark/60 p-6 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+                <div className="bg-gradient-to-br from-card-dark to-card-dark/60 p-6 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden flex flex-col justify-between min-h-[140px] hover:border-white/10 transition-colors duration-300">
                     <div className="absolute -right-6 -top-6 w-20 h-20 bg-orange-500/10 rounded-full blur-xl" />
                     <div className="flex items-center space-x-3 text-gray-400 mb-4">
                         <div className="p-2.5 bg-orange-500/15 text-orange-400 rounded-xl"><Flame className="w-5 h-5" /></div>
@@ -181,7 +200,7 @@ export default function Stats() {
                 </div>
 
                 {/* Motivation Award */}
-                <div className="bg-card-dark border border-primary/10 p-6 rounded-2xl relative overflow-hidden flex items-center justify-center text-center shadow-lg">
+                <div className="bg-card-dark border border-primary/10 p-6 rounded-2xl relative overflow-hidden flex items-center justify-center text-center shadow-lg hover:border-primary/20 transition-colors duration-300">
                     <div className="absolute inset-0 bg-primary/3" />
                     <div className="relative z-10 space-y-1">
                         <Award className="w-8 h-8 text-primary mx-auto mb-2" />
@@ -191,34 +210,79 @@ export default function Stats() {
                 </div>
             </div>
 
-            {/* Yearly Overview Bar Chart Card */}
-            <div className="bg-card-dark p-6 rounded-2xl border border-white/5 shadow-xl">
-                <h2 className="text-lg font-bold text-white tracking-tight mb-6 flex items-center gap-3">
-                    <span className="w-1.5 h-6 bg-secondary rounded-full" />
-                    {year} Overview
-                </h2>
+            {/* Grid for Chart & Habit Breakdown */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                
+                {/* Year Overview Chart Card (Spans 2 columns) */}
+                <div className="lg:col-span-2 bg-card-dark p-6 rounded-2xl border border-white/5 shadow-xl hover:border-white/10 transition-colors duration-300">
+                    <h2 className="text-lg font-bold text-white tracking-tight mb-6 flex items-center gap-3">
+                        <span className="w-1.5 h-6 bg-secondary rounded-full" />
+                        {year} Monthly Overview
+                    </h2>
 
-                {habits.length === 0 ? (
-                    <div className="h-72 flex items-center justify-center text-gray-500 text-sm italic">
-                        Create and track habits on the Dashboard to see statistics here.
-                    </div>
-                ) : (
-                    <div className="h-72 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={yearlyStats} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#252525" vertical={false} />
-                                <XAxis dataKey="name" stroke="#555" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
-                                <YAxis stroke="#555" tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} tick={{ fontSize: 11 }} />
-                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
-                                <Bar dataKey="percentage" radius={[4, 4, 0, 0]} animationDuration={1000}>
-                                    {yearlyStats.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.percentage > 70 ? '#b2f042' : '#b286fd'} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                )}
+                    {habits.length === 0 ? (
+                        <div className="h-72 flex items-center justify-center text-gray-500 text-sm italic">
+                            Create and track habits on the Dashboard to see statistics here.
+                        </div>
+                    ) : (
+                        <div className="h-72 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={yearlyStats} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#252525" vertical={false} />
+                                    <XAxis dataKey="name" stroke="#555" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+                                    <YAxis stroke="#555" tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} tick={{ fontSize: 11 }} />
+                                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
+                                    <Bar dataKey="percentage" radius={[4, 4, 0, 0]} animationDuration={1000}>
+                                        {yearlyStats.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.percentage > 70 ? '#b2f042' : '#b286fd'} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    )}
+                </div>
+
+                {/* Habit-by-Habits breakdown list (Spans 1 column) */}
+                <div className="bg-card-dark p-6 rounded-2xl border border-white/5 shadow-xl hover:border-white/10 transition-colors duration-300">
+                    <h2 className="text-lg font-bold text-white tracking-tight mb-6 flex items-center gap-3">
+                        <span className="w-1.5 h-6 bg-primary rounded-full" />
+                        Habit Breakdown ({year})
+                    </h2>
+
+                    {habits.length === 0 ? (
+                        <p className="text-gray-500 text-xs text-center italic py-12">No tracked habits.</p>
+                    ) : (
+                        <div className="space-y-4">
+                            {habitStats.map((habit) => (
+                                <div key={habit.id} className="space-y-2">
+                                    <div className="flex justify-between items-center text-sm font-semibold text-gray-200">
+                                        <div className="flex items-center space-x-2">
+                                            <span>{habit.emoji || '🎯'}</span>
+                                            <span className="truncate max-w-[120px]">{habit.title}</span>
+                                        </div>
+                                        <div className="flex items-center space-x-1.5 text-xs text-gray-400">
+                                            <TrendingUp className="w-3.5 h-3.5 text-primary" />
+                                            <span>{habit.percentage}%</span>
+                                        </div>
+                                    </div>
+                                    {/* Progress track */}
+                                    <div className="w-full h-2 bg-black/40 rounded-full overflow-hidden border border-white/5">
+                                        <div 
+                                            className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
+                                            style={{ width: `${habit.percentage}%` }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between text-[10px] text-gray-500 font-bold">
+                                        <span>{habit.completed} days done</span>
+                                        <span>{habit.total} possible</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
             </div>
         </div>
     );
