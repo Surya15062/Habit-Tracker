@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
 import { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
 
 export const AuthContext = createContext();
 
@@ -9,27 +8,27 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        const storedUser = localStorage.getItem('user');
-        if (token && storedUser) {
-            setUser(JSON.parse(storedUser));
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        const storedUser = localStorage.getItem('habit_user');
+        if (storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+            } catch {
+                localStorage.removeItem('habit_user');
+            }
         }
         setLoading(false);
     }, []);
 
-    const login = (token, userData) => {
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
+    const login = (userData) => {
+        localStorage.setItem('habit_user', JSON.stringify(userData));
         setUser(userData);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     };
 
     const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        // Clear ALL app data so next user starts fresh
+        localStorage.clear();
+        sessionStorage.clear();
         setUser(null);
-        delete axios.defaults.headers.common['Authorization'];
     };
 
     return (

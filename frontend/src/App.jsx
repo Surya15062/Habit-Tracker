@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { useContext } from 'react';
-import axios from 'axios';
 
 // Pages
 import Login from './pages/Login';
@@ -10,17 +9,18 @@ import Dashboard from './pages/Dashboard';
 import Stats from './pages/Stats';
 import Sidebar from './components/Sidebar';
 
-// Setup axios base url — reads from env var in production, falls back to localhost in dev
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400 animate-pulse">Loading...</div>;
+  if (loading) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', background: '#101010', fontSize: '1.1rem' }}>
+      Loading...
+    </div>
+  );
   if (!user) return <Navigate to="/login" replace />;
   return (
-    <div className="flex bg-background-dark min-h-screen text-white">
+    <div style={{ display: 'flex', background: '#101010', minHeight: '100vh', color: '#fff' }}>
       <Sidebar />
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
         {children}
       </main>
     </div>
@@ -53,7 +53,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* 404 catch-all — redirect unknown routes to home */}
+          {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

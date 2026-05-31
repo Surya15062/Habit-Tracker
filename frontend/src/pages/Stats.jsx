@@ -1,25 +1,31 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import { useState, useMemo } from 'react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
-import { Calendar, Target, Award } from 'lucide-react';
+import { Calendar, Target, Award, Flame } from 'lucide-react';
 
-// Month names defined outside component so they are stable (no useEffect dep warning)
+// ── localStorage helpers ──────────────────────────────────────────────────────
+function loadHabits() {
+    try { return JSON.parse(localStorage.getItem('habit_habits')) || []; }
+    catch { return []; }
+}
+function loadProgress() {
+    try { return JSON.parse(localStorage.getItem('habit_progress')) || {}; }
+    catch { return {}; }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// Custom Tooltip defined outside the render function to avoid re-creation on every render
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
-            <div className="bg-card-dark border border-white/10 p-3 rounded-lg shadow-xl">
-                <p className="font-bold mb-1">{label}</p>
-                <p className="text-sm">
-                    <span className="text-secondary font-semibold">{payload[0].value}%</span> Completed
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                    {payload[0].payload.total_completed} / {payload[0].payload.total_possible} days
+            <div style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.1)', padding: '0.75rem 1rem', borderRadius: '0.6rem', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                <p style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{label}</p>
+                <p style={{ fontSize: '0.875rem', color: '#b2f042' }}>{payload[0].value}% Completed</p>
+                <p style={{ fontSize: '0.75rem', color: '#777', marginTop: '0.25rem' }}>
+                    {payload[0].payload.completed} / {payload[0].payload.total} habits
                 </p>
             </div>
         );
@@ -30,79 +36,100 @@ const CustomTooltip = ({ active, payload, label }) => {
 CustomTooltip.propTypes = {
     active: PropTypes.bool,
     label: PropTypes.string,
-    payload: PropTypes.arrayOf(
-        PropTypes.shape({
-            value: PropTypes.number,
-            payload: PropTypes.shape({
-                total_completed: PropTypes.number,
-                total_possible: PropTypes.number,
-            }),
-        })
-    ),
+    payload: PropTypes.array,
 };
 
-CustomTooltip.defaultProps = {
-    active: false,
-    label: '',
-    payload: [],
-};
+CustomTooltip.defaultProps = { active: false, label: '', payload: [] };
+
+// Calculate longest current streak (consecutive days with ≥1 completion)
+function calcStreak(habits, progress) {
+    if (!habits.length) return 0;
+    let streak = 0;
+    const d = new Date();
+    while (true) {
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const anyDone = habits.some(h => progress[h.id] && progress[h.id][dateStr]);
+        if (!anyDone) break;
+        streak++;
+        d.setDate(d.getDate() - 1);
+    }
+    return streak;
+}
 
 export default function Stats() {
-    const date = new Date();
-    const [year, setYear] = useState(date.getFullYear());
-    const [month, setMonth] = useState(date.getMonth() + 1);
+    const now = new Date();
+    const [year, setYear] = useState(now.getFullYear());
+    const [month, setMonth] = useState(now.getMonth() + 1);
 
-    const [monthlyStats, setMonthlyStats] = useState(null);
-    const [yearlyStats, setYearlyStats] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const habits = useMemo(() => loadHabits(), []);
+    const progress = useMemo(() => loadProgress(), []);
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            setLoading(true);
-            try {
-                const [monthlyRes, yearlyRes] = await Promise.all([
-                    axios.get(`/stats/monthly?year=${year}&month=${month}`),
-                    axios.get(`/stats/yearly?year=${year}`)
-                ]);
-                setMonthlyStats(monthlyRes.data);
-                setYearlyStats(yearlyRes.data.map(item => ({
-                    ...item,
-                    name: MONTH_NAMES[parseInt(item.month.split('-')[1]) - 1]
-                })));
-            } catch (err) {
-                console.error("Error fetching stats", err);
-            } finally {
-                setLoading(false);
+    // Build yearly chart data from localStorage
+    const yearlyStats = useMemo(() => {
+        return MONTH_NAMES.map((name, idx) => {
+            const m = idx + 1;
+            const daysInMonth = new Date(year, m, 0).getDate();
+            let completed = 0, total = 0;
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                habits.forEach(h => {
+                    total++;
+                    if (progress[h.id] && progress[h.id][dateStr]) completed++;
+                });
             }
-        };
-        fetchStats();
-    }, [year, month]);
+            const percentage = total ? Math.round((completed / total) * 100) : 0;
+            return { name, percentage, completed, total };
+        });
+    }, [year, habits, progress]);
 
-    const currentMonthCompletion = monthlyStats?.percentage || 0;
+    // Monthly stats for selected month
+    const monthlyStats = useMemo(() => {
+        const daysInMonth = new Date(year, month, 0).getDate();
+        let completed = 0, total = 0, daysWithAny = 0;
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            let dayCompleted = 0;
+            habits.forEach(h => {
+                total++;
+                if (progress[h.id] && progress[h.id][dateStr]) { completed++; dayCompleted++; }
+            });
+            if (dayCompleted > 0) daysWithAny++;
+        }
+        const percentage = total ? Math.round((completed / total) * 100) : 0;
+        return { percentage, completed_days: daysWithAny, total_days: daysInMonth };
+    }, [year, month, habits, progress]);
 
-    // Calculate overall yearly completion from aggregated data
-    const { yearlyCompletion } = useMemo(() => {
-        const totalYearCompleted = yearlyStats.reduce((sum, item) => sum + item.total_completed, 0);
-        const totalYearPossible = yearlyStats.reduce((sum, item) => sum + item.total_possible, 0);
-        return {
-            yearlyCompletion: totalYearPossible ? Math.round((totalYearCompleted / totalYearPossible) * 100) : 0,
-        };
+    const yearlyCompletion = useMemo(() => {
+        const total = yearlyStats.reduce((s, i) => s + i.total, 0);
+        const done = yearlyStats.reduce((s, i) => s + i.completed, 0);
+        return total ? Math.round((done / total) * 100) : 0;
     }, [yearlyStats]);
 
-    if (loading) return <div className="p-8 text-center text-gray-400 animate-pulse">Loading statistics...</div>;
+    const streak = useMemo(() => calcStreak(habits, progress), [habits, progress]);
+
+    const cardStyle = (accent) => ({
+        background: 'linear-gradient(135deg, #1c1c1c, #111)',
+        padding: '1.5rem',
+        borderRadius: '1rem',
+        border: `1px solid rgba(255,255,255,0.05)`,
+        position: 'relative',
+        overflow: 'hidden',
+    });
 
     return (
-        <div className="max-w-6xl mx-auto pb-12">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 pb-6 border-b border-white/5">
+        <div style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: '3rem' }}>
+
+            {/* Header */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <div>
-                    <h1 className="text-3xl font-bold mb-2">Statistics &amp; Progress</h1>
-                    <p className="text-gray-400">Track your long-term success and consistency.</p>
+                    <h1 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.4rem' }}>Statistics &amp; Progress</h1>
+                    <p style={{ color: '#888' }}>Track your long-term success and consistency.</p>
                 </div>
-                <div className="mt-4 md:mt-0 flex space-x-4">
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
                     <select
                         value={month}
-                        onChange={(e) => setMonth(parseInt(e.target.value))}
-                        className="bg-card-dark border border-white/10 rounded-lg px-4 py-2 outline-none focus:border-secondary transition-colors"
+                        onChange={e => setMonth(parseInt(e.target.value))}
+                        style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', padding: '0.6rem 1rem', color: '#fff', outline: 'none' }}
                     >
                         {MONTH_NAMES.map((m, idx) => (
                             <option key={m} value={idx + 1}>{m}</option>
@@ -111,75 +138,83 @@ export default function Stats() {
                     <input
                         type="number"
                         value={year}
-                        onChange={(e) => setYear(parseInt(e.target.value))}
-                        className="w-24 bg-card-dark border border-white/10 rounded-lg px-4 py-2 outline-none focus:border-secondary transition-colors"
+                        onChange={e => setYear(parseInt(e.target.value))}
+                        style={{ width: '90px', background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', padding: '0.6rem 1rem', color: '#fff', outline: 'none' }}
                     />
                 </div>
             </div>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div className="bg-gradient-to-br from-card-dark to-black p-6 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden">
-                    <div className="absolute -right-6 -top-6 w-24 h-24 bg-primary/10 rounded-full blur-2xl"></div>
-                    <div className="flex items-center space-x-4 mb-4">
-                        <div className="p-3 bg-primary/20 text-primary rounded-xl">
-                            <Calendar className="w-6 h-6" />
-                        </div>
-                        <h3 className="text-gray-400 font-medium">Monthly Success</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
+
+                <div style={cardStyle('#b2f042')}>
+                    <div style={{ position: 'absolute', right: '-1.5rem', top: '-1.5rem', width: '5rem', height: '5rem', background: 'rgba(178,240,66,0.08)', borderRadius: '50%', filter: 'blur(20px)' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                        <div style={{ padding: '0.6rem', background: 'rgba(178,240,66,0.15)', borderRadius: '0.6rem', color: '#b2f042' }}><Calendar size={20} /></div>
+                        <span style={{ color: '#888', fontSize: '0.875rem' }}>Monthly Success</span>
                     </div>
-                    <p className="text-4xl font-bold">{currentMonthCompletion}%</p>
-                    <p className="text-sm text-gray-500 mt-2">{monthlyStats?.completed_days} days completed</p>
+                    <p style={{ fontSize: '2.5rem', fontWeight: '700' }}>{monthlyStats.percentage}%</p>
+                    <p style={{ color: '#555', fontSize: '0.8rem', marginTop: '0.25rem' }}>{monthlyStats.completed_days} active days</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-card-dark to-black p-6 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden">
-                    <div className="absolute -right-6 -top-6 w-24 h-24 bg-secondary/10 rounded-full blur-2xl"></div>
-                    <div className="flex items-center space-x-4 mb-4">
-                        <div className="p-3 bg-secondary/20 text-secondary rounded-xl">
-                            <Target className="w-6 h-6" />
-                        </div>
-                        <h3 className="text-gray-400 font-medium">Yearly Success</h3>
+                <div style={cardStyle('#b286fd')}>
+                    <div style={{ position: 'absolute', right: '-1.5rem', top: '-1.5rem', width: '5rem', height: '5rem', background: 'rgba(178,134,253,0.08)', borderRadius: '50%', filter: 'blur(20px)' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                        <div style={{ padding: '0.6rem', background: 'rgba(178,134,253,0.15)', borderRadius: '0.6rem', color: '#b286fd' }}><Target size={20} /></div>
+                        <span style={{ color: '#888', fontSize: '0.875rem' }}>Yearly Success</span>
                     </div>
-                    <p className="text-4xl font-bold">{yearlyCompletion}%</p>
-                    <p className="text-sm text-gray-500 mt-2">Aggregated over {year}</p>
+                    <p style={{ fontSize: '2.5rem', fontWeight: '700' }}>{yearlyCompletion}%</p>
+                    <p style={{ color: '#555', fontSize: '0.8rem', marginTop: '0.25rem' }}>Aggregated over {year}</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-card-dark to-black p-6 rounded-2xl border border-primary/20 shadow-[0_0_30px_rgba(178,240,66,0.05)] relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors"></div>
-                    <div className="relative z-10 flex flex-col items-center justify-center h-full text-center">
-                        <Award className="w-10 h-10 text-primary mb-2" />
-                        <h3 className="font-medium mb-1">Keep It Up!</h3>
-                        <p className="text-sm text-gray-400">Consistency is key to forming lasting habits.</p>
+                <div style={cardStyle('#fb923c')}>
+                    <div style={{ position: 'absolute', right: '-1.5rem', top: '-1.5rem', width: '5rem', height: '5rem', background: 'rgba(251,146,60,0.08)', borderRadius: '50%', filter: 'blur(20px)' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                        <div style={{ padding: '0.6rem', background: 'rgba(251,146,60,0.15)', borderRadius: '0.6rem', color: '#fb923c' }}><Flame size={20} /></div>
+                        <span style={{ color: '#888', fontSize: '0.875rem' }}>Current Streak</span>
+                    </div>
+                    <p style={{ fontSize: '2.5rem', fontWeight: '700' }}>{streak} <span style={{ fontSize: '1rem', fontWeight: '400', color: '#555' }}>days</span></p>
+                    <p style={{ color: '#555', fontSize: '0.8rem', marginTop: '0.25rem' }}>Keep it going!</p>
+                </div>
+
+                <div style={{ ...cardStyle(), border: '1px solid rgba(178,240,66,0.15)', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(178,240,66,0.03)' }} />
+                    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', padding: '0.5rem 0' }}>
+                        <Award size={36} color="#b2f042" style={{ marginBottom: '0.5rem' }} />
+                        <p style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Keep It Up!</p>
+                        <p style={{ fontSize: '0.8rem', color: '#666' }}>Consistency is key to forming lasting habits.</p>
                     </div>
                 </div>
             </div>
 
             {/* Yearly Chart */}
-            <div className="bg-card-dark p-6 rounded-2xl border border-white/5 shadow-xl">
-                <h2 className="text-xl font-semibold mb-6 flex items-center">
-                    <span className="w-2 h-6 bg-secondary rounded-full mr-3"></span>
+            <div style={{ background: '#1c1c1c', padding: '1.5rem', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <h2 style={{ fontSize: '1.15rem', fontWeight: '600', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <span style={{ width: '4px', height: '1.4rem', background: '#b286fd', borderRadius: '4px', display: 'inline-block' }} />
                     {year} Overview
                 </h2>
-                <div className="h-80 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={yearlyStats} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                            <XAxis dataKey="name" stroke="#888" tickLine={false} axisLine={false} />
-                            <YAxis stroke="#888" tickLine={false} axisLine={false} tickFormatter={(val) => `${val}%`} />
-                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                            <Bar
-                                dataKey="percentage"
-                                radius={[4, 4, 0, 0]}
-                                animationDuration={1500}
-                            >
-                                {
-                                    yearlyStats.map((entry, index) => (
+
+                {habits.length === 0 ? (
+                    <div style={{ height: '280px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: '0.9rem' }}>
+                        Add some habits on the Dashboard to see statistics here.
+                    </div>
+                ) : (
+                    <div style={{ height: '280px', width: '100%' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={yearlyStats} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} />
+                                <XAxis dataKey="name" stroke="#555" tickLine={false} axisLine={false} />
+                                <YAxis stroke="#555" tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                                <Bar dataKey="percentage" radius={[4, 4, 0, 0]} animationDuration={1200}>
+                                    {yearlyStats.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.percentage > 70 ? '#b2f042' : '#b286fd'} />
-                                    ))
-                                }
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                )}
             </div>
         </div>
     );

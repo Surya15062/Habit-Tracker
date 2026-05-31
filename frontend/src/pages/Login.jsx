@@ -1,64 +1,97 @@
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { Activity } from 'lucide-react';
 
 export default function Login() {
     const [name, setName] = useState('');
     const [age, setAge] = useState('');
-    const [error, setError] = useState('');
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        try {
-            const { data } = await axios.post('/auth/login', {
-                name: name.trim(),
-                age: parseInt(age)
-            });
-            login(data.token, data.user);
-            navigate('/');
-        } catch (err) {
-            setError(err.response?.data?.error || 'Login failed');
-        }
+        if (!name.trim()) return;
+        // Store user locally — no backend, no password, no JWT
+        login({ name: name.trim(), age: age ? parseInt(age) : null });
+        navigate('/');
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background-dark p-4">
-            <div className="w-full max-w-md bg-card-dark p-8 rounded-2xl shadow-xl border border-white/10">
-                <div className="flex justify-center mb-8">
-                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-                        <Activity className="w-6 h-6 text-primary" />
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#101010', padding: '1rem' }}>
+            <div style={{ width: '100%', maxWidth: '420px', background: '#1c1c1c', padding: '2.5rem', borderRadius: '1.25rem', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
+
+                {/* Logo */}
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+                    <div style={{ width: '56px', height: '56px', background: 'rgba(178,240,66,0.15)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Activity size={28} color="#b2f042" />
                     </div>
                 </div>
-                <h2 className="text-2xl font-bold text-center mb-2">Welcome</h2>
-                <p className="text-gray-400 text-center mb-6 text-sm">Enter your details to log in or create a profile.</p>
 
-                {error && <div className="bg-red-500/10 text-red-500 p-3 rounded-lg mb-4 text-sm text-center">{error}</div>}
+                <h1 style={{ fontSize: '1.75rem', fontWeight: '700', textAlign: 'center', marginBottom: '0.5rem', color: '#fff' }}>
+                    Welcome Back
+                </h1>
+                <p style={{ color: '#888', textAlign: 'center', marginBottom: '2rem', fontSize: '0.9rem' }}>
+                    Enter your name to start tracking your habits.
+                </p>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                     <div>
-                        <label className="block text-sm font-medium mb-1 text-gray-400">Name</label>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', color: '#aaa', marginBottom: '0.4rem' }}>
+                            Your Name <span style={{ color: '#b2f042' }}>*</span>
+                        </label>
                         <input
+                            id="login-name"
                             type="text"
-                            className="w-full bg-black/50 border border-white/10 rounded-lg p-3 outline-none focus:border-primary transition-colors"
-                            value={name} onChange={(e) => setName(e.target.value)} required
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required
                             placeholder="e.g. John Doe"
+                            autoFocus
+                            style={{
+                                width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '0.6rem', padding: '0.85rem 1rem', color: '#fff', fontSize: '1rem',
+                                outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s'
+                            }}
+                            onFocus={e => e.target.style.borderColor = '#b2f042'}
+                            onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
                         />
                     </div>
+
                     <div>
-                        <label className="block text-sm font-medium mb-1 text-gray-400">Age</label>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', color: '#aaa', marginBottom: '0.4rem' }}>
+                            Age <span style={{ color: '#666', fontWeight: '400' }}>(optional)</span>
+                        </label>
                         <input
+                            id="login-age"
                             type="number"
-                            className="w-full bg-black/50 border border-white/10 rounded-lg p-3 outline-none focus:border-primary transition-colors"
-                            value={age} onChange={(e) => setAge(e.target.value)} required
-                            min="1" max="120" placeholder="e.g. 25"
+                            value={age}
+                            onChange={(e) => setAge(e.target.value)}
+                            placeholder="e.g. 25"
+                            min="1"
+                            max="120"
+                            style={{
+                                width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '0.6rem', padding: '0.85rem 1rem', color: '#fff', fontSize: '1rem',
+                                outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s'
+                            }}
+                            onFocus={e => e.target.style.borderColor = '#b2f042'}
+                            onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
                         />
                     </div>
-                    <button type="submit" className="w-full bg-primary text-black font-semibold py-3 rounded-lg hover:bg-primary/90 transition-colors mt-6">
-                        Continue
+
+                    <button
+                        id="login-submit"
+                        type="submit"
+                        style={{
+                            width: '100%', background: '#b2f042', color: '#000', fontWeight: '700',
+                            fontSize: '1rem', padding: '0.9rem', borderRadius: '0.6rem', border: 'none',
+                            cursor: 'pointer', marginTop: '0.5rem', transition: 'opacity 0.2s'
+                        }}
+                        onMouseOver={e => e.target.style.opacity = '0.85'}
+                        onMouseOut={e => e.target.style.opacity = '1'}
+                    >
+                        Continue →
                     </button>
                 </form>
             </div>
