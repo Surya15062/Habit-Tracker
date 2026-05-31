@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@theme {
+:root {
   --color-primary: #b2f042;
   --color-secondary: #b286fd;
   --color-background-dark: #101010;
@@ -8,10 +8,12 @@
   --font-sans: 'Poppins', sans-serif;
 }
 
-@layer base {
-  body {
-    @apply bg-background-dark text-white font-sans antialiased;
-  }
+body {
+  background-color: var(--color-background-dark);
+  color: #ffffff;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ── Custom Premium Animations ──────────────────────────────────────────────── */
@@ -51,14 +53,14 @@
 
 /* Premium Button and Card glow utilities */
 .glow-primary {
-  @apply shadow-[0_0_15px_rgba(178,240,66,0.15)];
+  box-shadow: 0 0 15px rgba(178,240,66,0.15);
 }
 .glow-primary-hover:hover {
-  @apply shadow-[0_0_25px_rgba(178,240,66,0.35)];
+  box-shadow: 0 0 25px rgba(178,240,66,0.35);
 }
 
 .glow-secondary {
-  @apply shadow-[0_0_15px_rgba(178,134,253,0.15)];
+  box-shadow: 0 0 15px rgba(178,134,253,0.15);
 }
 
 /* Smooth custom checkbox transition */
