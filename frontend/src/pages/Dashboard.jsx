@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import HabitCard from '../components/HabitCard';
-import { Plus, CheckSquare } from 'lucide-react';
+import { Plus, CheckSquare, Sparkles } from 'lucide-react';
 
 // ── localStorage helpers ──────────────────────────────────────────────────────
 const HABITS_KEY = 'habit_habits';
@@ -36,14 +36,13 @@ export default function Dashboard() {
     const today = useMemo(() => getTodayStr(), []);
 
     const [habits, setHabits] = useState(loadHabits);
-    // progress: { [habitId]: { [dateStr]: boolean } }
     const [progress, setProgress] = useState(loadProgress);
 
     const [showAdd, setShowAdd] = useState(false);
     const [newTitle, setNewTitle] = useState('');
     const [newFrequency, setNewFrequency] = useState('daily');
 
-    // Sync to localStorage whenever data changes
+    // Sync to localStorage
     useEffect(() => { saveHabits(habits); }, [habits]);
     useEffect(() => { saveProgress(progress); }, [progress]);
 
@@ -72,7 +71,7 @@ export default function Dashboard() {
         const newHabit = {
             id: Date.now(),
             title: newTitle.trim(),
-            frequency: newFrequency,
+            frequency: newFrequency.charAt(0).toUpperCase() + newFrequency.slice(1),
             created_at: new Date().toISOString(),
         };
         setHabits(prev => [...prev, newHabit]);
@@ -97,143 +96,210 @@ export default function Dashboard() {
         : 0;
 
     return (
-        <div style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: '3rem' }}>
-
-            {/* Greeting */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <div>
-                    <h1 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.4rem' }}>
-                        Hello, {user?.name}! 👋
-                    </h1>
-                    <p style={{ color: '#888' }}>Here&apos;s your habit tracking overview for today.</p>
-                </div>
-
-                {/* Progress ring */}
-                <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '1.5rem', background: '#1c1c1c', padding: '1rem 1.5rem', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div style={{ textAlign: 'right' }}>
-                        <p style={{ fontSize: '0.8rem', color: '#777', marginBottom: '0.25rem' }}>Today&apos;s Progress</p>
-                        <p style={{ fontSize: '1.6rem', fontWeight: '700', color: '#b2f042' }}>
-                            {completedCount} <span style={{ fontSize: '1rem', color: '#555', fontWeight: '400' }}>/ {habits.length}</span>
+        <div className="space-y-8">
+            {/* Top Banner Row: Greeting + Progress Ring */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+                {/* Greeting Card */}
+                <div className="lg:col-span-2 bg-gradient-to-br from-card-dark to-card-dark/60 border border-white/5 p-6 rounded-2xl flex flex-col justify-between relative overflow-hidden shadow-lg">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <Sparkles className="w-24 h-24 text-primary" />
+                    </div>
+                    <div className="relative z-10 space-y-2">
+                        <h1 className="text-3xl font-extrabold tracking-tight text-white md:text-4xl">
+                            Hello, {user?.name}! 👋
+                        </h1>
+                        <p className="text-gray-400 text-sm max-w-lg">
+                            Here&apos;s your habit tracking overview for today. Keep building your streak and stay consistent!
                         </p>
                     </div>
-                    <div style={{ width: '56px', height: '56px', borderRadius: '50%', border: '4px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', background: `conic-gradient(#b2f042 ${progressPercentage * 3.6}deg, #222 0deg)` }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#1c1c1c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ fontSize: '0.7rem', fontWeight: '700' }}>{progressPercentage}%</span>
+                    <div className="mt-6 text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 py-1.5 px-3 rounded-lg w-max border border-primary/10">
+                        Today: {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+                    </div>
+                </div>
+
+                {/* Progress Card */}
+                <div className="bg-card-dark border border-white/5 p-6 rounded-2xl flex items-center justify-between shadow-lg relative overflow-hidden">
+                    <div className="space-y-2">
+                        <p className="text-xs uppercase tracking-wider text-gray-500 font-bold">Today&apos;s Progress</p>
+                        <div className="flex items-baseline space-x-1.5">
+                            <span className="text-4xl font-extrabold text-primary">{completedCount}</span>
+                            <span className="text-gray-500 text-sm font-semibold">/ {habits.length} habits</span>
                         </div>
+                        <p className="text-xs text-gray-400 font-medium">
+                            {progressPercentage === 100 && habits.length > 0 
+                                ? 'Perfect day! 🎉' 
+                                : habits.length === 0 
+                                ? 'Create a habit to begin!' 
+                                : `${habits.length - completedCount} remaining for today`}
+                        </p>
+                    </div>
+
+                    {/* Progress Circle Container */}
+                    <div className="relative w-24 h-24 flex-shrink-0">
+                        <svg className="w-full h-full transform -rotate-90">
+                            {/* Outer Track */}
+                            <circle
+                                cx="48"
+                                cy="48"
+                                r="36"
+                                className="stroke-white/5 fill-none"
+                                strokeWidth="8"
+                            />
+                            {/* Active Ring */}
+                            <circle
+                                cx="48"
+                                cy="48"
+                                r="36"
+                                className="stroke-primary fill-none transition-all duration-500 ease-out"
+                                strokeWidth="8"
+                                strokeDasharray={2 * Math.PI * 36}
+                                strokeDashoffset={2 * Math.PI * 36 * (1 - progressPercentage / 100)}
+                                strokeLinecap="round"
+                            />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center font-bold text-base text-white">
+                            {progressPercentage}%
+                        </span>
                     </div>
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', alignItems: 'start' }}>
+            {/* Main Content Grid: Habit List & Today's Checklist */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                
+                {/* Column 1 & 2: Habits List */}
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-xl font-bold text-white tracking-tight">Your Habits</h2>
+                            <p className="text-xs text-gray-400 mt-1">Manage and track your active routine</p>
+                        </div>
+                        <button
+                            id="add-habit-btn"
+                            onClick={() => setShowAdd(!showAdd)}
+                            className="flex items-center space-x-2 bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-black px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-300 shadow-sm cursor-pointer"
+                        >
+                            <Plus className="w-4 h-4" />
+                            <span>Add Habit</span>
+                        </button>
+                    </div>
 
-                    {/* Habits list */}
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-                            <h2 style={{ fontSize: '1.4rem', fontWeight: '600' }}>Your Habits</h2>
-                            <button
-                                id="add-habit-btn"
-                                onClick={() => setShowAdd(!showAdd)}
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(178,240,66,0.1)', color: '#b2f042', border: '1px solid rgba(178,240,66,0.2)', padding: '0.5rem 1rem', borderRadius: '0.6rem', cursor: 'pointer', fontWeight: '500', transition: 'all 0.2s' }}
-                                onMouseOver={e => { e.currentTarget.style.background = '#b2f042'; e.currentTarget.style.color = '#000'; }}
-                                onMouseOut={e => { e.currentTarget.style.background = 'rgba(178,240,66,0.1)'; e.currentTarget.style.color = '#b2f042'; }}
+                    {/* Add Habit Form Panel */}
+                    {showAdd && (
+                        <form 
+                            onSubmit={addHabit} 
+                            className="bg-card-dark p-6 rounded-2xl border border-white/10 flex flex-col md:flex-row gap-4 items-stretch shadow-inner"
+                        >
+                            <input
+                                type="text"
+                                placeholder="E.g., Read 20 pages"
+                                value={newTitle}
+                                onChange={e => setNewTitle(e.target.value)}
+                                required
+                                autoFocus
+                                className="flex-1 bg-black/50 border border-white/10 rounded-xl p-3 outline-none focus:border-primary text-sm text-white placeholder-gray-500 transition-colors"
+                            />
+                            <select
+                                value={newFrequency}
+                                onChange={e => setNewFrequency(e.target.value)}
+                                className="bg-black/50 border border-white/10 rounded-xl p-3 outline-none focus:border-primary text-sm text-white px-4 transition-colors cursor-pointer"
                             >
-                                <Plus size={16} /> Add Habit
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                            <button 
+                                type="submit" 
+                                className="bg-primary text-black font-bold px-6 py-3 rounded-xl hover:bg-primary/90 transition-colors text-sm cursor-pointer shadow-md shadow-primary/15"
+                            >
+                                Save Habit
+                            </button>
+                        </form>
+                    )}
+
+                    {/* Habits Cards Grid */}
+                    {habits.length === 0 ? (
+                        <div className="bg-card-dark rounded-2xl p-16 text-center border border-white/5 border-dashed flex flex-col items-center justify-center space-y-4">
+                            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-gray-400">
+                                <Plus className="w-6 h-6" />
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-gray-300 font-semibold">No habits tracked yet</p>
+                                <p className="text-xs text-gray-500">Create your first habit to begin building routines.</p>
+                            </div>
+                            <button 
+                                onClick={() => setShowAdd(true)} 
+                                className="bg-primary text-black font-bold px-5 py-2.5 rounded-xl inline-flex items-center space-x-2 text-sm hover:bg-primary/90 transition-colors cursor-pointer shadow-md shadow-primary/15"
+                            >
+                                <Plus className="w-4 h-4" /> 
+                                <span>Create first habit</span>
                             </button>
                         </div>
-
-                        {showAdd && (
-                            <form onSubmit={addHabit} style={{ display: 'flex', gap: '0.75rem', background: '#1c1c1c', padding: '1.25rem', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-                                <input
-                                    type="text"
-                                    placeholder="E.g., Read 20 pages"
-                                    value={newTitle}
-                                    onChange={e => setNewTitle(e.target.value)}
-                                    required
-                                    autoFocus
-                                    style={{ flex: '1', minWidth: '180px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', padding: '0.7rem 1rem', color: '#fff', outline: 'none' }}
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            {habits.map(habit => (
+                                <HabitCard
+                                    key={habit.id}
+                                    habit={habit}
+                                    isCompletedForToday={todayProgress[habit.id]}
+                                    onToggleProgress={toggleProgress}
+                                    onDelete={deleteHabit}
                                 />
-                                <select
-                                    value={newFrequency}
-                                    onChange={e => setNewFrequency(e.target.value)}
-                                    style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', padding: '0.7rem 1rem', color: '#fff', outline: 'none' }}
-                                >
-                                    <option value="daily">Daily</option>
-                                    <option value="weekly">Weekly</option>
-                                    <option value="custom">Custom</option>
-                                </select>
-                                <button type="submit" style={{ background: '#b2f042', color: '#000', fontWeight: '700', padding: '0.7rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>
-                                    Save
-                                </button>
-                            </form>
-                        )}
+                            ))}
+                        </div>
+                    )}
+                </div>
 
+                {/* Column 3: Today's Checklist Panel */}
+                <div className="space-y-6">
+                    <div>
+                        <h2 className="text-xl font-bold text-white tracking-tight">Today&apos;s Checklist</h2>
+                        <p className="text-xs text-gray-400 mt-1">Check off habits for today</p>
+                    </div>
+
+                    <div className="bg-card-dark p-6 rounded-2xl border border-white/5 shadow-xl space-y-4">
                         {habits.length === 0 ? (
-                            <div style={{ background: '#1c1c1c', borderRadius: '1rem', padding: '3rem', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.08)' }}>
-                                <p style={{ color: '#666', marginBottom: '1rem' }}>You haven&apos;t added any habits yet.</p>
-                                <button onClick={() => setShowAdd(true)} style={{ background: '#b2f042', color: '#000', fontWeight: '700', padding: '0.6rem 1.5rem', borderRadius: '0.6rem', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <Plus size={16} /> Create first habit
-                                </button>
-                            </div>
+                            <p className="text-gray-500 text-xs text-center italic py-6">No active habits for today.</p>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
+                            <div className="space-y-3">
                                 {habits.map(habit => (
-                                    <div key={habit.id} style={{ position: 'relative' }}>
-                                        <HabitCard
-                                            habit={habit}
-                                            isCompletedForToday={todayProgress[habit.id]}
-                                            onToggleProgress={toggleProgress}
+                                    <label 
+                                        key={habit.id} 
+                                        className="flex items-center space-x-4 cursor-pointer group p-3 hover:bg-white/30 rounded-xl transition-all duration-200"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={!!todayProgress[habit.id]}
+                                            onChange={(e) => toggleProgress(habit.id, e.target.checked)}
+                                            className="hidden"
                                         />
-                                        <button
-                                            onClick={() => deleteHabit(habit.id)}
-                                            style={{ position: 'absolute', bottom: '1.25rem', right: '1.25rem', fontSize: '0.75rem', color: 'rgba(239,68,68,0.4)', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.2s' }}
-                                            onMouseOver={e => e.target.style.color = 'rgb(239,68,68)'}
-                                            onMouseOut={e => e.target.style.color = 'rgba(239,68,68,0.4)'}
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
+                                        <div className={`w-5.5 h-5.5 rounded-lg border flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+                                            todayProgress[habit.id] 
+                                                ? 'bg-secondary border-secondary shadow-md shadow-secondary/15 scale-105' 
+                                                : 'bg-black/40 border-white/20 group-hover:border-secondary/60'
+                                        }`}>
+                                            {todayProgress[habit.id] && <CheckSquare className="w-3.5 h-3.5 text-white" />}
+                                        </div>
+                                        <span className={`text-sm font-semibold transition-all duration-200 truncate ${
+                                            todayProgress[habit.id] 
+                                                ? 'text-gray-500 line-through' 
+                                                : 'text-gray-200 group-hover:text-white'
+                                        }`}>
+                                            {habit.title}
+                                        </span>
+                                    </label>
                                 ))}
                             </div>
                         )}
+
+                        {progressPercentage === 100 && habits.length > 0 && (
+                            <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl text-center shadow-inner mt-4 animate-bounce">
+                                <p className="text-primary font-bold text-xs">🎉 Fantastic job! You completed all habits today!</p>
+                            </div>
+                        )}
                     </div>
-
-                    {/* Today's Checklist */}
-                    <div>
-                        <h2 style={{ fontSize: '1.2rem', fontWeight: '600', marginBottom: '1.25rem' }}>Today&apos;s Checklist</h2>
-                        <div style={{ background: '#1c1c1c', padding: '1.5rem', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-                            {habits.length === 0 ? (
-                                <p style={{ color: '#555', fontSize: '0.875rem', textAlign: 'center', fontStyle: 'italic', padding: '1rem 0' }}>No tasks for today.</p>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    {habits.map(habit => (
-                                        <label key={habit.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-                                            <input
-                                                type="checkbox"
-                                                checked={!!todayProgress[habit.id]}
-                                                onChange={(e) => toggleProgress(habit.id, e.target.checked)}
-                                                style={{ display: 'none' }}
-                                            />
-                                            <div style={{ width: '22px', height: '22px', borderRadius: '5px', border: `2px solid ${todayProgress[habit.id] ? '#b286fd' : 'rgba(255,255,255,0.2)'}`, background: todayProgress[habit.id] ? '#b286fd' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}>
-                                                {todayProgress[habit.id] && <CheckSquare size={14} color="#fff" />}
-                                            </div>
-                                            <span style={{ fontSize: '0.9rem', color: todayProgress[habit.id] ? '#555' : '#ccc', textDecoration: todayProgress[habit.id] ? 'line-through' : 'none', transition: 'all 0.2s' }}>
-                                                {habit.title}
-                                            </span>
-                                        </label>
-                                    ))}
-                                </div>
-                            )}
-
-                            {progressPercentage === 100 && habits.length > 0 && (
-                                <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(178,240,66,0.08)', border: '1px solid rgba(178,240,66,0.2)', borderRadius: '0.75rem', textAlign: 'center' }}>
-                                    <p style={{ color: '#b2f042', fontWeight: '600', fontSize: '0.875rem' }}>🎉 You crushed it today!</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
                 </div>
+
             </div>
         </div>
     );

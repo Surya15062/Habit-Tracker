@@ -1,86 +1,108 @@
+import PropTypes from 'prop-types';
 import { useContext } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { LayoutDashboard, BarChart3, LogOut, CheckCircle2 } from 'lucide-react';
+import { LayoutDashboard, BarChart3, LogOut, CheckCircle2, X } from 'lucide-react';
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, setIsOpen }) {
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        logout(); // clears all localStorage
+        logout();
+        setIsOpen(false);
         navigate('/login', { replace: true });
     };
 
-    const navBase = {
-        display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%',
-        padding: '0.7rem 0.9rem', borderRadius: '0.75rem', transition: 'all 0.2s',
-        textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500',
-    };
+    const linkClasses = ({ isActive }) =>
+        `flex items-center space-x-3 w-full p-3 rounded-xl transition-all duration-200 ${
+            isActive
+                ? 'text-black bg-primary font-semibold shadow-lg shadow-primary/20'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+        }`;
 
     return (
-        <div style={{ width: '240px', background: '#161616', borderRight: '1px solid rgba(255,255,255,0.05)', height: '100vh', display: 'flex', flexDirection: 'column', padding: '1.5rem 1rem', position: 'sticky', top: 0, flexShrink: 0 }}>
-
-            {/* Logo */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2.5rem', padding: '0 0.4rem' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #b2f042, #b286fd)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <CheckCircle2 size={18} color="#000" />
-                </div>
-                <span style={{ fontSize: '1.1rem', fontWeight: '700', color: '#fff' }}>HabitTracker</span>
-            </div>
-
-            {/* User info */}
-            {user && (
-                <div style={{ padding: '0.75rem', background: 'rgba(178,240,66,0.05)', border: '1px solid rgba(178,240,66,0.1)', borderRadius: '0.75rem', marginBottom: '1.5rem' }}>
-                    <p style={{ fontSize: '0.75rem', color: '#666', marginBottom: '0.15rem' }}>Logged in as</p>
-                    <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#b2f042' }}>{user.name}</p>
-                    {user.age && <p style={{ fontSize: '0.75rem', color: '#555' }}>Age: {user.age}</p>}
-                </div>
+        <>
+            {/* Mobile Sidebar Overlay */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 md:hidden"
+                    onClick={() => setIsOpen(false)}
+                />
             )}
 
-            {/* Nav */}
-            <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                <NavLink
-                    to="/"
-                    end
-                    style={({ isActive }) => ({
-                        ...navBase,
-                        background: isActive ? '#b2f042' : 'transparent',
-                        color: isActive ? '#000' : '#888',
-                    })}
-                    onMouseOver={e => { if (!e.currentTarget.classList.contains('active')) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#fff'; } }}
-                    onMouseOut={e => { if (!e.currentTarget.style.background.includes('rgb(178')) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#888'; } }}
-                >
-                    <LayoutDashboard size={18} />
-                    <span>Dashboard</span>
-                </NavLink>
-
-                <NavLink
-                    to="/stats"
-                    style={({ isActive }) => ({
-                        ...navBase,
-                        background: isActive ? '#b2f042' : 'transparent',
-                        color: isActive ? '#000' : '#888',
-                    })}
-                    onMouseOver={e => { if (!e.currentTarget.style.background.includes('rgb(178')) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#fff'; } }}
-                    onMouseOut={e => { if (!e.currentTarget.style.background.includes('rgb(178')) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#888'; } }}
-                >
-                    <BarChart3 size={18} />
-                    <span>Statistics</span>
-                </NavLink>
-            </nav>
-
-            {/* Logout */}
-            <button
-                id="logout-btn"
-                onClick={handleLogout}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%', padding: '0.7rem 0.9rem', borderRadius: '0.75rem', background: 'transparent', border: 'none', color: 'rgba(239,68,68,0.6)', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '500', transition: 'all 0.2s', marginTop: '0.5rem' }}
-                onMouseOver={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = 'rgb(239,68,68)'; }}
-                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(239,68,68,0.6)'; }}
+            {/* Sidebar Drawer */}
+            <div
+                className={`fixed md:sticky top-0 left-0 z-50 md:z-auto h-screen w-64 bg-card-dark border-r border-white/5 flex flex-col p-6 transition-transform duration-300 md:translate-x-0 ${
+                    isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+                }`}
             >
-                <LogOut size={18} />
-                <span>Logout</span>
-            </button>
-        </div>
+                {/* Logo & Close Button */}
+                <div className="flex items-center justify-between mb-8 px-2">
+                    <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
+                            <CheckCircle2 className="text-black w-5 h-5" />
+                        </div>
+                        <span className="text-xl font-bold tracking-tight text-white">HabitTracker</span>
+                    </div>
+                    {/* Mobile Close Button */}
+                    <button
+                        onClick={() => setIsOpen(false)}
+                        className="p-1 text-gray-400 hover:text-white md:hidden focus:outline-none"
+                        aria-label="Close menu"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* User Info Profile Box */}
+                {user && (
+                    <div className="p-4 bg-white/5 border border-white/10 rounded-2xl mb-8 flex flex-col gap-1">
+                        <span className="text-[11px] uppercase tracking-wider text-gray-500 font-semibold">Logged In As</span>
+                        <span className="text-sm font-bold text-primary truncate">{user.name}</span>
+                        {user.age && (
+                            <span className="text-xs text-gray-400">Age: {user.age}</span>
+                        )}
+                    </div>
+                )}
+
+                {/* Navigation Links */}
+                <nav className="flex-1 space-y-2">
+                    <NavLink
+                        to="/"
+                        end
+                        onClick={() => setIsOpen(false)}
+                        className={linkClasses}
+                    >
+                        <LayoutDashboard className="w-5 h-5" />
+                        <span>Dashboard</span>
+                    </NavLink>
+
+                    <NavLink
+                        to="/stats"
+                        onClick={() => setIsOpen(false)}
+                        className={linkClasses}
+                    >
+                        <BarChart3 className="w-5 h-5" />
+                        <span>Statistics</span>
+                    </NavLink>
+                </nav>
+
+                {/* Logout Button */}
+                <button
+                    id="logout-btn"
+                    onClick={handleLogout}
+                    className="flex items-center space-x-3 w-full p-3 rounded-xl transition-all duration-200 text-red-400 hover:bg-red-500/10 hover:text-red-300 mt-auto border border-transparent focus:outline-none cursor-pointer"
+                >
+                    <LogOut className="w-5 h-5" />
+                    <span>Logout</span>
+                </button>
+            </div>
+        </>
     );
 }
+
+Sidebar.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    setIsOpen: PropTypes.func.isRequired,
+};

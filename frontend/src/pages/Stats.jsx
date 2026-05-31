@@ -21,10 +21,12 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
-            <div style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.1)', padding: '0.75rem 1rem', borderRadius: '0.6rem', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-                <p style={{ fontWeight: '700', marginBottom: '0.25rem' }}>{label}</p>
-                <p style={{ fontSize: '0.875rem', color: '#b2f042' }}>{payload[0].value}% Completed</p>
-                <p style={{ fontSize: '0.75rem', color: '#777', marginTop: '0.25rem' }}>
+            <div className="bg-card-dark border border-white/10 p-3 rounded-xl shadow-xl">
+                <p className="font-bold text-white mb-1">{label}</p>
+                <p className="text-sm text-primary font-semibold">
+                    {payload[0].value}% Completed
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
                     {payload[0].payload.completed} / {payload[0].payload.total} habits
                 </p>
             </div>
@@ -107,29 +109,19 @@ export default function Stats() {
 
     const streak = useMemo(() => calcStreak(habits, progress), [habits, progress]);
 
-    const cardStyle = (accent) => ({
-        background: 'linear-gradient(135deg, #1c1c1c, #111)',
-        padding: '1.5rem',
-        borderRadius: '1rem',
-        border: `1px solid rgba(255,255,255,0.05)`,
-        position: 'relative',
-        overflow: 'hidden',
-    });
-
     return (
-        <div style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: '3rem' }}>
-
-            {/* Header */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="space-y-8">
+            {/* Header section with Year/Month Selector */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/5">
                 <div>
-                    <h1 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.4rem' }}>Statistics &amp; Progress</h1>
-                    <p style={{ color: '#888' }}>Track your long-term success and consistency.</p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-white">Statistics &amp; Progress</h1>
+                    <p className="text-sm text-gray-400 mt-1">Track your long-term success and consistency.</p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                <div className="flex space-x-3">
                     <select
                         value={month}
                         onChange={e => setMonth(parseInt(e.target.value))}
-                        style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', padding: '0.6rem 1rem', color: '#fff', outline: 'none' }}
+                        className="bg-card-dark border border-white/10 rounded-xl px-4 py-2.5 outline-none focus:border-secondary transition-colors text-sm text-white cursor-pointer"
                     >
                         {MONTH_NAMES.map((m, idx) => (
                             <option key={m} value={idx + 1}>{m}</option>
@@ -139,74 +131,86 @@ export default function Stats() {
                         type="number"
                         value={year}
                         onChange={e => setYear(parseInt(e.target.value))}
-                        style={{ width: '90px', background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', padding: '0.6rem 1rem', color: '#fff', outline: 'none' }}
+                        className="w-24 bg-card-dark border border-white/10 rounded-xl px-4 py-2.5 outline-none focus:border-secondary transition-colors text-sm text-white"
                     />
                 </div>
             </div>
 
-            {/* KPI Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
-
-                <div style={cardStyle('#b2f042')}>
-                    <div style={{ position: 'absolute', right: '-1.5rem', top: '-1.5rem', width: '5rem', height: '5rem', background: 'rgba(178,240,66,0.08)', borderRadius: '50%', filter: 'blur(20px)' }} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                        <div style={{ padding: '0.6rem', background: 'rgba(178,240,66,0.15)', borderRadius: '0.6rem', color: '#b2f042' }}><Calendar size={20} /></div>
-                        <span style={{ color: '#888', fontSize: '0.875rem' }}>Monthly Success</span>
+            {/* KPI Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                {/* Monthly Success */}
+                <div className="bg-gradient-to-br from-card-dark to-card-dark/60 p-6 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+                    <div className="absolute -right-6 -top-6 w-20 h-20 bg-primary/10 rounded-full blur-xl" />
+                    <div className="flex items-center space-x-3 text-gray-400 mb-4">
+                        <div className="p-2.5 bg-primary/15 text-primary rounded-xl"><Calendar className="w-5 h-5" /></div>
+                        <span className="text-xs uppercase tracking-wider font-bold">Monthly Success</span>
                     </div>
-                    <p style={{ fontSize: '2.5rem', fontWeight: '700' }}>{monthlyStats.percentage}%</p>
-                    <p style={{ color: '#555', fontSize: '0.8rem', marginTop: '0.25rem' }}>{monthlyStats.completed_days} active days</p>
+                    <div>
+                        <p className="text-4xl font-extrabold text-white">{monthlyStats.percentage}%</p>
+                        <p className="text-[11px] text-gray-500 font-semibold mt-1">{monthlyStats.completed_days} Active Days</p>
+                    </div>
                 </div>
 
-                <div style={cardStyle('#b286fd')}>
-                    <div style={{ position: 'absolute', right: '-1.5rem', top: '-1.5rem', width: '5rem', height: '5rem', background: 'rgba(178,134,253,0.08)', borderRadius: '50%', filter: 'blur(20px)' }} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                        <div style={{ padding: '0.6rem', background: 'rgba(178,134,253,0.15)', borderRadius: '0.6rem', color: '#b286fd' }}><Target size={20} /></div>
-                        <span style={{ color: '#888', fontSize: '0.875rem' }}>Yearly Success</span>
+                {/* Yearly Success */}
+                <div className="bg-gradient-to-br from-card-dark to-card-dark/60 p-6 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+                    <div className="absolute -right-6 -top-6 w-20 h-20 bg-secondary/10 rounded-full blur-xl" />
+                    <div className="flex items-center space-x-3 text-gray-400 mb-4">
+                        <div className="p-2.5 bg-secondary/15 text-secondary rounded-xl"><Target className="w-5 h-5" /></div>
+                        <span className="text-xs uppercase tracking-wider font-bold">Yearly Success</span>
                     </div>
-                    <p style={{ fontSize: '2.5rem', fontWeight: '700' }}>{yearlyCompletion}%</p>
-                    <p style={{ color: '#555', fontSize: '0.8rem', marginTop: '0.25rem' }}>Aggregated over {year}</p>
+                    <div>
+                        <p className="text-4xl font-extrabold text-white">{yearlyCompletion}%</p>
+                        <p className="text-[11px] text-gray-500 font-semibold mt-1">Aggregated over {year}</p>
+                    </div>
                 </div>
 
-                <div style={cardStyle('#fb923c')}>
-                    <div style={{ position: 'absolute', right: '-1.5rem', top: '-1.5rem', width: '5rem', height: '5rem', background: 'rgba(251,146,60,0.08)', borderRadius: '50%', filter: 'blur(20px)' }} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                        <div style={{ padding: '0.6rem', background: 'rgba(251,146,60,0.15)', borderRadius: '0.6rem', color: '#fb923c' }}><Flame size={20} /></div>
-                        <span style={{ color: '#888', fontSize: '0.875rem' }}>Current Streak</span>
+                {/* Current Streak */}
+                <div className="bg-gradient-to-br from-card-dark to-card-dark/60 p-6 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+                    <div className="absolute -right-6 -top-6 w-20 h-20 bg-orange-500/10 rounded-full blur-xl" />
+                    <div className="flex items-center space-x-3 text-gray-400 mb-4">
+                        <div className="p-2.5 bg-orange-500/15 text-orange-400 rounded-xl"><Flame className="w-5 h-5" /></div>
+                        <span className="text-xs uppercase tracking-wider font-bold">Current Streak</span>
                     </div>
-                    <p style={{ fontSize: '2.5rem', fontWeight: '700' }}>{streak} <span style={{ fontSize: '1rem', fontWeight: '400', color: '#555' }}>days</span></p>
-                    <p style={{ color: '#555', fontSize: '0.8rem', marginTop: '0.25rem' }}>Keep it going!</p>
+                    <div>
+                        <p className="text-4xl font-extrabold text-white">
+                            {streak} <span className="text-sm text-gray-500 font-normal">days</span>
+                        </p>
+                        <p className="text-[11px] text-gray-500 font-semibold mt-1">Keep it glowing! 🔥</p>
+                    </div>
                 </div>
 
-                <div style={{ ...cardStyle(), border: '1px solid rgba(178,240,66,0.15)', position: 'relative', overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(178,240,66,0.03)' }} />
-                    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', padding: '0.5rem 0' }}>
-                        <Award size={36} color="#b2f042" style={{ marginBottom: '0.5rem' }} />
-                        <p style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Keep It Up!</p>
-                        <p style={{ fontSize: '0.8rem', color: '#666' }}>Consistency is key to forming lasting habits.</p>
+                {/* Motivation Award */}
+                <div className="bg-card-dark border border-primary/10 p-6 rounded-2xl relative overflow-hidden flex items-center justify-center text-center shadow-lg">
+                    <div className="absolute inset-0 bg-primary/3" />
+                    <div className="relative z-10 space-y-1">
+                        <Award className="w-8 h-8 text-primary mx-auto mb-2" />
+                        <p className="text-sm font-bold text-white">Keep It Up!</p>
+                        <p className="text-xs text-gray-400 max-w-[200px] mx-auto">Consistency is the secret to building habits that last.</p>
                     </div>
                 </div>
             </div>
 
-            {/* Yearly Chart */}
-            <div style={{ background: '#1c1c1c', padding: '1.5rem', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <h2 style={{ fontSize: '1.15rem', fontWeight: '600', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <span style={{ width: '4px', height: '1.4rem', background: '#b286fd', borderRadius: '4px', display: 'inline-block' }} />
+            {/* Yearly Overview Bar Chart Card */}
+            <div className="bg-card-dark p-6 rounded-2xl border border-white/5 shadow-xl">
+                <h2 className="text-lg font-bold text-white tracking-tight mb-6 flex items-center gap-3">
+                    <span className="w-1.5 h-6 bg-secondary rounded-full" />
                     {year} Overview
                 </h2>
 
                 {habits.length === 0 ? (
-                    <div style={{ height: '280px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: '0.9rem' }}>
-                        Add some habits on the Dashboard to see statistics here.
+                    <div className="h-72 flex items-center justify-center text-gray-500 text-sm italic">
+                        Create and track habits on the Dashboard to see statistics here.
                     </div>
                 ) : (
-                    <div style={{ height: '280px', width: '100%' }}>
+                    <div className="h-72 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={yearlyStats} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} />
-                                <XAxis dataKey="name" stroke="#555" tickLine={false} axisLine={false} />
-                                <YAxis stroke="#555" tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} />
-                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                                <Bar dataKey="percentage" radius={[4, 4, 0, 0]} animationDuration={1200}>
+                            <BarChart data={yearlyStats} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#252525" vertical={false} />
+                                <XAxis dataKey="name" stroke="#555" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+                                <YAxis stroke="#555" tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} tick={{ fontSize: 11 }} />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />
+                                <Bar dataKey="percentage" radius={[4, 4, 0, 0]} animationDuration={1000}>
                                     {yearlyStats.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.percentage > 70 ? '#b2f042' : '#b286fd'} />
                                     ))}
