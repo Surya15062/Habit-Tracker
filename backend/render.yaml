@@ -1,0 +1,28 @@
+# render.yaml — Infrastructure-as-code for Render deployment
+# https://render.com/docs/render-yaml
+
+services:
+  - type: web
+    name: habit-tracker-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DB_HOST
+        sync: false   # Set manually in Render dashboard
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true   # Render auto-generates a secure value
+      - key: FRONTEND_URL
+        sync: false   # Set to your Vercel URL after deploying frontend
