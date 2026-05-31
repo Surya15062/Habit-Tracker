@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import HabitCard from '../components/HabitCard';
+import HabitForm from '../components/HabitForm';
 import { Plus, CheckSquare, Sparkles, ClipboardList } from 'lucide-react';
 
 // ── localStorage helpers ──────────────────────────────────────────────────────
@@ -30,18 +31,45 @@ function getTodayStr() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-const EMOJI_PRESETS = [
-    { char: '📚', label: 'Reading' },
-    { char: '💧', label: 'Water' },
-    { char: '🏃', label: 'Running' },
-    { char: '🧘', label: 'Meditation' },
-    { char: '💪', label: 'Workout' },
-    { char: '😴', label: 'Sleep' },
-    { char: '🍎', label: 'Healthy Food' },
-    { char: '🎯', label: 'Goals' },
-    { char: '💻', label: 'Coding' },
-    { char: '🎨', label: 'Design' }
-];
+function getStreak(habitId, progress) {
+    const habitProgress = progress[habitId] || {};
+    let streak = 0;
+    let currentD = new Date();
+    currentD.setHours(0, 0, 0, 0); // Normalize time
+    
+    // Format date to YYYY-MM-DD
+    const formatDate = (date) => {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    };
+
+    let todayStr = formatDate(currentD);
+    let yesterdayD = new Date(currentD);
+    yesterdayD.setDate(yesterdayD.getDate() - 1);
+    let yesterdayStr = formatDate(yesterdayD);
+
+    if (!habitProgress[todayStr] && !habitProgress[yesterdayStr]) {
+        return 0;
+    }
+
+    let checkD = new Date(currentD);
+    if (!habitProgress[todayStr] && habitProgress[yesterdayStr]) {
+        checkD = new Date(yesterdayD);
+    }
+
+    while (true) {
+        let dateStr = formatDate(checkD);
+        if (habitProgress[dateStr]) {
+            streak++;
+            checkD.setDate(checkD.getDate() - 1);
+        } else {
+            break;
+        }
+    }
+    
+    return streak;
+}
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -52,9 +80,6 @@ export default function Dashboard() {
     const [progress, setProgress] = useState(loadProgress);
 
     const [showAdd, setShowAdd] = useState(false);
-    const [newTitle, setNewTitle] = useState('');
-    const [newFrequency, setNewFrequency] = useState('daily');
-    const [selectedEmoji, setSelectedEmoji] = useState('🎯');
 
     // Sync to localStorage
     useEffect(() => { saveHabits(habits); }, [habits]);
@@ -79,20 +104,13 @@ export default function Dashboard() {
         }));
     }, [today]);
 
-    const addHabit = (e) => {
-        e.preventDefault();
-        if (!newTitle.trim()) return;
+    const addHabit = (habitData) => {
         const newHabit = {
             id: Date.now(),
-            title: newTitle.trim(),
-            emoji: selectedEmoji,
-            frequency: newFrequency.charAt(0).toUpperCase() + newFrequency.slice(1),
+            ...habitData,
             created_at: new Date().toISOString(),
         };
         setHabits(prev => [...prev, newHabit]);
-        setNewTitle('');
-        setNewFrequency('daily');
-        setSelectedEmoji('🎯');
         setShowAdd(false);
     };
 
@@ -202,62 +220,10 @@ export default function Dashboard() {
 
                     {/* Add Habit Form Panel */}
                     {showAdd && (
-                        <form 
-                            onSubmit={addHabit} 
-                            className="bg-card-dark p-6 rounded-2xl border border-white/10 flex flex-col gap-5 shadow-inner"
-                        >
-                            <div className="flex flex-col md:flex-row gap-4 items-stretch">
-                                <input
-                                    type="text"
-                                    placeholder="E.g., Read 20 pages"
-                                    value={newTitle}
-                                    onChange={e => setNewTitle(e.target.value)}
-                                    required
-                                    autoFocus
-                                    className="flex-1 bg-black/50 border border-white/10 rounded-xl p-3 outline-none focus:border-primary text-sm text-white placeholder-gray-500 transition-colors"
-                                />
-                                <select
-                                    value={newFrequency}
-                                    onChange={e => setNewFrequency(e.target.value)}
-                                    className="bg-black/50 border border-white/10 rounded-xl p-3 outline-none focus:border-primary text-sm text-white px-4 transition-colors cursor-pointer"
-                                >
-                                    <option value="daily">Daily</option>
-                                    <option value="weekly">Weekly</option>
-                                    <option value="custom">Custom</option>
-                                </select>
-                            </div>
-
-                            {/* iOS Style Emoji Presets Selector */}
-                            <div className="space-y-2">
-                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">
-                                    Choose Habit Icon
-                                </label>
-                                <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 bg-black/30 p-2 rounded-xl border border-white/5">
-                                    {EMOJI_PRESETS.map((preset) => (
-                                        <button
-                                            key={preset.char}
-                                            type="button"
-                                            onClick={() => setSelectedEmoji(preset.char)}
-                                            className={`p-2.5 rounded-lg text-xl text-center transition-all duration-200 hover:bg-white/10 active:scale-90 cursor-pointer ${
-                                                selectedEmoji === preset.char 
-                                                    ? 'bg-primary/20 border border-primary/40 scale-110 shadow-sm' 
-                                                    : 'border border-transparent opacity-60 hover:opacity-100'
-                                            }`}
-                                            title={preset.label}
-                                        >
-                                            {preset.char}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <button 
-                                type="submit" 
-                                className="bg-primary text-black font-extrabold py-3.5 rounded-xl hover:bg-primary/95 transition-all duration-300 text-sm cursor-pointer shadow-md shadow-primary/10 hover:shadow-lg hover:shadow-primary/20 transform hover:scale-[1.01] active:scale-[0.99] glow-primary-hover"
-                            >
-                                Save Habit
-                            </button>
-                        </form>
+                        <HabitForm 
+                            onSave={addHabit} 
+                            onCancel={() => setShowAdd(false)} 
+                        />
                     )}
 
                     {/* Habits Cards Grid */}
@@ -296,6 +262,7 @@ export default function Dashboard() {
                                         isCompletedForToday={todayProgress[habit.id]}
                                         onToggleProgress={toggleProgress}
                                         onDelete={deleteHabit}
+                                        streak={getStreak(habit.id, progress)}
                                     />
                                 </div>
                             ))}
@@ -326,12 +293,12 @@ export default function Dashboard() {
                                             onChange={(e) => toggleProgress(habit.id, e.target.checked)}
                                             className="hidden"
                                         />
-                                        <div className={`w-5.5 h-5.5 rounded-lg border flex items-center justify-center flex-shrink-0 transition-all duration-200 checkbox-transition ${
+                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200 checkbox-transition ${
                                             todayProgress[habit.id] 
-                                                ? 'bg-secondary border-secondary shadow-md shadow-secondary/15 scale-105 animate-check-pop' 
-                                                : 'bg-black/40 border-white/20 group-hover:border-secondary/60'
+                                                ? 'bg-primary border-primary shadow-md shadow-primary/20 scale-110 animate-check-pop' 
+                                                : 'bg-transparent border-gray-500 group-hover:border-gray-400'
                                         }`}>
-                                            {todayProgress[habit.id] && <CheckSquare className="w-3.5 h-3.5 text-white" />}
+                                            {todayProgress[habit.id] && <svg className="w-3.5 h-3.5 text-black stroke-[3]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
                                         </div>
                                         <span className="text-base mr-1.5 flex-shrink-0">
                                             {habit.emoji || '🎯'}
@@ -347,10 +314,17 @@ export default function Dashboard() {
                                 ))}
                             </div>
                         )}
-
                         {progressPercentage === 100 && habits.length > 0 && (
-                            <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl text-center shadow-inner mt-4 animate-bounce">
-                                <p className="text-primary font-bold text-xs">🎉 Fantastic job! You completed all habits today!</p>
+                            <div className="mt-2 pt-4 border-t border-white/5 flex items-center justify-between animate-success-pop">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 flex-shrink-0">
+                                        <Sparkles className="w-4 h-4 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-bold text-white">Perfect Day</h4>
+                                        <p className="text-[11px] text-gray-400">You've completed every habit today.</p>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
